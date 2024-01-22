@@ -10,6 +10,15 @@ E_inv_sigma2 <- function(delta1, delta2){
   delta1/delta2
 }
 
+E_log_sigma2 <- function(delta1, delta2){
+  log(delta2) - digamma(delta1)
+}
+
+E_log_tau2 <- function(lambda1, lambda2){
+  log(lambda2) - digamma(lambda1)
+}
+
+
 E_square_i <- function(B, i, y, mu, Sigma, p, iter){
   ni <- unlist(lapply(y,length))
   p_i <- p[iter - 1, grep(paste0("^beta_[0-9]+_",i,"$"), colnames(mu))]
@@ -37,33 +46,29 @@ E_Ct_C <- function(z, i, p, mu, Sigma, B, y, k, K, iter){
   ind_inotk <- seq(1:K)[-k]
   
   p_i_nok <- p[ind_inotk]
-  mu_bi_nok <- mu[iter, ind_inotk]
-  var_bi_nok <- diag(Sigma[[iter]][,ind_inotk])
+  mu_bi <- mu[iter, grep(paste0("^beta_[0-9]+_",i,"$"), colnames(mu))]
+  mu_bi_nok <- mu_bi[ind_inotk]
+  Sigmai <- Sigma[[iter]][,grep(paste0("^beta_[0-9]+_",i,"$"), colnames(mu))]
+  var_bi_nok <- diag(Sigmai[ind_inotk,ind_inotk])
   
-  mu_bik <- mu[iter, grep(paste0("^beta_",k,"_",i,"$"), colnames(mu))]
-  p_ki <- p[k]
+  mu_bik <- mu_bi[k]
   var_bik <- diag(Sigma[[iter]][,grep(paste0("^beta_[0-9]+_",i,"$"), colnames(mu))])[k]
   
-  CtC <- sum(sapply(1:ni[i], function(j){sum((var_bi_nok*p_i_nok*(1-p_i_nok) + var_bi_nok*p_i_nok^2 + p_i_nok*(1-p_i_nok)*mu_bi_nok^2)*B[[i]][j, -k]^2)})) + 
-    sum(var_bik*p_ki^2*B[[i]][, k]^2) + sum(sapply(1:ni[i], function(j){(y[[i]][j] - sum(mu_bi_nok*p_i_nok*B[[i]][j,-k]) - z*mu_bik*B[[i]][j, k])^2})) 
+  CtC <- sum(sapply(1:ni[i], function(j){sum((var_bi_nok*p_i_nok*(1-p_i_nok) + var_bi_nok*(p_i_nok^2) + p_i_nok*(1-p_i_nok)*(mu_bi_nok^2))*B[[i]][j, -k]^2)})) + sum(var_bik*(z^2)*(B[[i]][, k]^2)) + sum(sapply(1:ni[i], function(j){(y[[i]][j] - sum(mu_bi_nok*p_i_nok*B[[i]][j,-k]) - z*mu_bik*B[[i]][j, k])^2})) 
   
   return(CtC)
   
 }  
   
   
-E_log_theta_ki <- function(i, k, a1, a2){
-  a1_ki <- a1
-  a2_ki <- a2
-  
+E_log_theta_ki <- function(a1_ki, a2_ki){
+
   return(digamma(a1_ki) - digamma(a1_ki + a2_ki))
 }
 
 
-E_log_theta_ki_c <- function(i, k, a1, a2){
-  a1_ki <- a1
-  a2_ki <- a2
-  
+E_log_theta_ki_c <- function(a1_ki, a2_ki){
+
   return(digamma(a2_ki) - digamma(a1_ki + a2_ki))
 }
 
