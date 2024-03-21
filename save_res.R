@@ -127,7 +127,7 @@ abline(a = 0.01, b = 0, lwd = 2, col = "red", lty = 2)
 
 
 
-# credible band
+# credible band ----
 
 gi_t <- t(t(mu_betas)*t(z_star))%*%t(B) # 50x100
 
@@ -143,41 +143,27 @@ legend("topright", lwd = 1, col = c("red", "black"), legend= c("Estimated curve"
 
 # plot with some points (from one dataset)
 
-
-
-
 data_y <- do.call("rbind", data[['y']])
 as.numeric(data_y)
 plot(x = rep(seq(0, 1, length = 100), each = 5), y = as.numeric(data_y), xlab = "t", ylab = expression(g(t)))
 lines(x = seq(0, 1, length = 100), y = as.numeric(mu_betas[1,]%*% t(B)), lwd = 2, col= "red")
 
 
-# alternative way of generating the credible band in VB
+# alternative way of generating the credible band in VB ----
 
-z_star_full <- matrix(NA, 50, 50)
-z_star_full <- ifelse(p_values > 0.5, 1, 0)
-
-LL <- matrix(NA, 50, 10)
-UL <- matrix(NA, 50, 10)
 for(sim in 1:50){
-  cred <- lapply(c(1, 11, 21, 31, 41), function(x){apply(MASS::mvrnorm(500, mu = mu_beta_values[sim, x:(x+9)],  Sigma = res$Sigma2_beta[[sim]][, x:(x+9)]), 2, function(y){quantile(y, c(0.025,0.975))})})
-  
-  LL[sim,] <- apply(do.call("rbind", cred)[seq(1, 10, 2),], 2, mean)
-  
-  UL[sim,] <- apply(do.call("rbind", cred)[seq(2, 10, 2),], 2, mean)
-  
-  
+  betas_sample <- lapply(c(1, 11, 21, 31, 41), function(x){MASS::mvrnorm(100, mu = mu_beta_values[sim,x:(x+9)],  Sigma = res$Sigma2_beta[[sim]][,x:(x+9)])})
+  z_sample <- lapply(c(1, 11, 21, 31, 41), function(x){matrix(rbinom(10*100, 1, prob = p_values[sim, x:(x+9)]), ncol = 10, byrow = TRUE)})
+  betas_s_merge <- do.call("rbind", betas_sample)
+  z_s_merge <- do.call("rbind", z_sample)
 }
 
-(LL*z_star)%*%t(B)
-(UL*z_star)%*%t(B)
+LL <- apply((betas_s_merge*z_s_merge)%*%t(B) , 2, function(y){quantile(y, c(0.025,0.975))})[1,]
+UL <- apply((betas_s_merge*z_s_merge)%*%t(B) , 2, function(y){quantile(y, c(0.025,0.975))})[2,]
+
+plot(x = seq(0, 1, length = 100), y = as.numeric(as.vector(mu_beta_final*mode_z)%*% t(B)), lwd = 2, col= "red", type = "l", ylab = expression(g[t]), xlab = expression(t))
+lines(x = seq(0, 1, length = 100), y = LL, lwd = 1, lty = 2)
+lines(x = seq(0, 1, length = 100), y = UL, lwd = 1, lty = 2)
+legend("topright", lwd = 1, col = c("red", "black"), legend= c("Estimated curve", "Credible bands"))
 
 
-cred <- lapply(c(1, 11, 21, 31, 41), function(x){MASS::mvrnorm(100, mu = mu_beta_values[1,x:(x+9)],  Sigma = res$Sigma2_beta[[1]][,x:(x+9)])})
-do.call("rbind", cred)*z_star
-
-#matrix(rep(z_star_full[1,x:(x+9)], 2), ncol = 10, byrow = TRUE)
-
-LL <- apply(do.call("rbind", cred)[seq(1, 10, 2),], 2, mean)
-
-UL <- apply(do.call("rbind", cred)[seq(2, 10, 2),], 2, mean)
