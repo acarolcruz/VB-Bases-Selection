@@ -17,7 +17,7 @@
 
 vb_bs <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(-10), delta_1 = 10^(-10), delta_2 = 10^(-10), maxIter = 1000, K = 10, initial_values, convergence_threshold = 0.01){
   
-  coef_star_f <- matrix(NA, maxIter, m*K)
+  #coef_star_f <- matrix(NA, maxIter, m*K)
   # Creating structure to save output
   mu_beta_values <- matrix(NA, maxIter, m*K) 
   colnames(mu_beta_values) <- as.vector(outer(paste0("beta_",1:K,"_"),1:m,paste0))
@@ -43,8 +43,8 @@ vb_bs <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(
   elbo_prev <- 0
   ELBO_values <- -Inf
   iter <- 1
-  mu_prev <- initial_values$mu_0
-  coef_star_prev <- initial_values$coef_0
+  #mu_prev <- initial_values$mu_0
+  #coef_star_prev <- initial_values$coef_0
   
   while(converged == FALSE & iter < maxIter){
     iter <- iter + 1
@@ -112,7 +112,7 @@ vb_bs <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(
         log_rho_ki <- sapply(0:1, function(z){(-ni[i]/2)*E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q)-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_Ct_C(z = z, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter) + z*E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q) + (1-z)*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q)})
         
         if(sum(exp(log_rho_ki)) == 0){
-          cat("sum pki = 0", "iter:", iter, "\n")
+          #cat("sum pki = 0", "iter:", iter, "\n")
           p_ki_1 <- c(0,1)[which.max(log_rho_ki)]
         } else {
           p_ki_1 <- exp(((-ni[i]/2)*E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q)-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_Ct_C(z = 1, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter) + E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q)))/sum(exp(log_rho_ki))
@@ -140,7 +140,7 @@ vb_bs <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(
                    mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values,
                    a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki)
   
-    cat(elbo_c, "\n")
+    #cat(elbo_c, "\n")
     
     ELBO_values <- c(ELBO_values, elbo_c)
     #converged_1 <- ifelse(abs(elbo_c - elbo_prev) <= convergence_threshold, TRUE, FALSE)

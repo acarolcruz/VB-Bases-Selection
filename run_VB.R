@@ -2,15 +2,34 @@
 
 run_VB <- function(sim = sim, save_folder = save_folder, scenario = scenario, m = m, times = times, ordem = ordem, K = K, y = y, B = B, coef = coef, seed = seed, 
                          sigma = sigma, mu_ki = mu_ki, lambda_1 = lambda_1, lambda_2 = lambda_2, delta_1 = delta_1, delta_2 = delta_2, 
-                         maxIter = maxIter, initial_values = initial_values, convergence_threshold = convergence_threshold){
+                         maxIter = maxIter, initial_values = initial_values, convergence_threshold = convergence_threshold, w = w, corr = corr){
   
   tt <- Sys.time()
   
   # Generate the data for one dataset 
-  data <- sim_data(m = m, times = times, ordem = ordem, K = K, coef = coef, seed = seed + sim, sigma = sigma)
+  
+  if(!is.null(w) & corr == TRUE){
+    source("sim_data_corr.R")
+    source("elbo_formulas_corr.R")
+    source("aux_fun_corr.R")
+    data <- sim_data_corr(m = m, times = times, ordem = ordem, K = K, coef = coef, seed = seed + sim, sigma = sigma, w = w)
+    out <- vb_bs_corr(y = data$y, B = data$B, m = m, mu_ki = mu_ki, lambda_1 = lambda_1, lambda_2 = lambda_2, delta_1 = delta_1, delta_2 = delta_2, maxIter = maxIter, K = K, initial_values = initial_values, convergence_threshold = convergence_threshold, Xt = data$Xt)
+    
+  } else{
+    if(!is.null(w) & corr == FALSE){
+      data <- sim_data_corr(m = m, times = times, ordem = ordem, K = K, coef = coef, seed = seed + sim, sigma = sigma, w = w)
+      source("expected_values.R")
+      source("elbo_formulas.R")
+      out <- vb_bs(y = data$y, B = data$B, m = m, mu_ki = mu_ki, lambda_1 = lambda_1, lambda_2 = lambda_2, delta_1 = delta_1, delta_2 = delta_2, maxIter = maxIter, K = K, initial_values = initial_values, convergence_threshold = convergence_threshold)} else{
+        source("sim_data.R")
+        source("expected_values.R")
+        source("elbo_formulas.R")
+        data <- sim_data(m = m, times = times, ordem = ordem, K = K, coef = coef, seed = seed + sim, sigma = sigma)
+        out <- vb_bs(y = data$y, B = data$B, m = m, mu_ki = mu_ki, lambda_1 = lambda_1, lambda_2 = lambda_2, delta_1 = delta_1, delta_2 = delta_2, maxIter = maxIter, K = K, initial_values = initial_values, convergence_threshold = convergence_threshold)}
+    }
   
   # Run VB basis selection algorithm
-  out <- vb_bs(y = data$y, B = data$B, m = m, mu_ki = mu_ki, lambda_1 = lambda_1, lambda_2 = lambda_2, delta_1 = delta_1, delta_2 = delta_2, maxIter = maxIter, K = K, initial_values = initial_values, convergence_threshold = convergence_threshold)
+  #out <- vb_bs(y = data$y, B = data$B, m = m, mu_ki = mu_ki, lambda_1 = lambda_1, lambda_2 = lambda_2, delta_1 = delta_1, delta_2 = delta_2, maxIter = maxIter, K = K, initial_values = initial_values, convergence_threshold = convergence_threshold)
   
   tt <- difftime(Sys.time(), tt, units = 'mins')
   

@@ -18,11 +18,11 @@ sim_data <- function(m = 5, times = 100, ordem = 4, K = 10, coef = c(-2,0,1.5,1.
   B <- lapply(argvals, function(s) getbasismatrix(Xt, create.bspline.basis(range(Xt), norder = ordem, nbasis = K), nderiv = 0))
   
   # generating true value for the z (basis selection) (same for all curves)
-  z = rep(0, 10)
-  z[which(coef != 0)] <- 1
+  #z = rep(0, 10)
+  #z[which(coef != 0)] <- 1
   
 
-  return(list(y = y, B = B, z = z))
+  return(list(y = y, B = B))
   
 }
 
