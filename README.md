@@ -1,0 +1,3 @@
+Our Variational EM algorithm selects basis functions for smoothing one or multiple curves simultaneously.  In the E-step of our variational EM algorithm, we fix the correlation decay parameter and estimate the variational distributions for the other model parameters using VB. In the subsequent M-step, we use these VB estimates to maximize the evidence lower bound (ELBO) with respect to the correlation decay parameter. The algorithm iterates until ELBO convergence. As a result, all model parameters are obtained simultaneously and automatically, facilitating for a rapid and adaptive selection of basis functions while incorporating a data correlation structure.
+
+For more details see paper in arxiv
