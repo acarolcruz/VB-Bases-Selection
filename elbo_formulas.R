@@ -59,13 +59,13 @@ diff_theta_i <- function(i, iter, K, a1_values, a2_values, mu_beta_values, mu_ki
   a1_qi <- a1_values[iter, grep(paste0("^beta_[0-9]+_",i,"$"), colnames(mu_beta_values))] 
   a2_qi <- a2_values[iter, grep(paste0("^beta_[0-9]+_",i,"$"), colnames(mu_beta_values))] 
   
-  res <- c()
+  res <- numeric(K)
   for(k in 1:K){
-    res <- c(res, (mu_ki - a1_qi[k])*E_log_theta_ki(a1_qi[k], a2_qi[k]) + (1-mu_ki - a2_qi[k])*E_log_theta_ki_c(a1_qi[k], a2_qi[k]) + log(gamma(a1_qi)*gamma(a2_qi)))
+    res[k] <- (mu_ki - a1_qi[k])*E_log_theta_ki(a1_qi[k], a2_qi[k]) + (1-mu_ki - a2_qi[k])*E_log_theta_ki_c(a1_qi[k], a2_qi[k]) + log(gamma(a1_qi[k])*gamma(a2_qi[k]))
   }
-  sum(res)
   
   #cat("diff_theta_i :", sum(res), "\n")
+  #print(length(res))
   return(sum(res))
   
 }

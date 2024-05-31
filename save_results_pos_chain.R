@@ -5,7 +5,7 @@ Mode <- function(x) {
 }
 
 
-save_results_pos <- function(scenario = "Simulation1_Gibbs", chain = 1, sim = 1, startpoint_sampling = 10, maxIter = 10000){
+save_results_pos <- function(scenario = "Simulation1_Gibbs_paper", chain = 1, sim = 1, startpoint_sampling = 10, maxIter = 10000){
   
   load(paste0(paste0(scenario, "/chain", chain),"/Sim", sim, "Gibbsresults.RData"))
   
@@ -28,4 +28,4 @@ save_results_pos <- function(scenario = "Simulation1_Gibbs", chain = 1, sim = 1,
   cat("Results saved in folder \n")
 }
 
-for(sim in 1:50){save_results_pos(scenario = "Simulation1_Gibbs", chain = 2, sim = sim, startpoint_sampling = 50)}
+for(sim in 1:100){save_results_pos(scenario = "Simulation2_Gibbs_paper 3", chain = 1, sim = sim, startpoint_sampling = 50)}
