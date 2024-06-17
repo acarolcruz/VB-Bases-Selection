@@ -9,15 +9,28 @@ sim_data_corr <- function(m = 5, times = 100, ordem = 4, K = 10, coef = c(-2,0,1
   # generating basis functions (same for all curves)
   #Xt = seq(0, 1, length = times)
   if(basis_type == "B-splines"){
-    Xt = seq(0, 1, length = times)
+    Xt <- seq(0, 1, length = times)
     #Xt = seq(0, 100, length = times)
     basis_data <- create.bspline.basis(range(Xt), norder = ordem, nbasis = K)
     B_simulated_data <- getbasismatrix(Xt, basis_data, nderiv = 0)
+  } else if(basis_type == "Mixed"){
+      Xt <- seq(0, 1, length = times)
+      basis_data_fourier <- create.fourier.basis(range(Xt), nbasis = floor(K/2))
+      B_simulated_data_fourier <- getbasismatrix(Xt, basis_data_fourier, nderiv = 0)
+      
+      Xt <- seq(0, 1, length = times)
+      basis_data_bs <- create.bspline.basis(range(Xt), norder = ordem, nbasis = round(K/2))
+      B_simulated_data_bs <- getbasismatrix(Xt, basis_data_bs, nderiv = 0)
+      
+      B_simulated_data <- cbind(B_simulated_data_fourier, B_simulated_data_bs)
   } else{
-    Xt = seq(0, 2*pi, length = times)
-    basis_data <- create.fourier.basis(range(Xt), nbasis = K)
-    B_simulated_data <- getbasismatrix(Xt, basis_data, nderiv = 0)
+        Xt = seq(0, 2*pi, length = times)
+        basis_data <- create.fourier.basis(range(Xt), nbasis = K)
+        B_simulated_data <- getbasismatrix(Xt, basis_data, nderiv = 0)
   }
+      
+      
+    
   
   
   
@@ -39,7 +52,7 @@ sim_data_corr <- function(m = 5, times = 100, ordem = 4, K = 10, coef = c(-2,0,1
   # generating data for each curve
   #set.seed(seed)
   argvals <- lapply(1:m, function(s) Xt)
-  if(basis_type == "B-splines"){
+  if((basis_type == "B-splines") | (basis_type == "Mixed")){
     y <- lapply(1:m, function(s) as.numeric(B_simulated_data %*% coef) + et[,s])
   } else{
     y <- lapply(1:m, function(s) cos(Xt) + sin(2*Xt) + et[,s]) # same as Pedro's
