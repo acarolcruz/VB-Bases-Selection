@@ -132,7 +132,8 @@ calPsi <- function(tt, s, w=1) {
   for (i in 1:nrow(Psi)) {
     for (j in 1:ncol(Psi)) {
       #Psi[i,j] <- exp(-(2/w) * (abs(tt[i] - s[j]) / (max(tt) - min(tt)))) #Gabriel's
-      Psi[i,j] <- exp(- w * abs(tt[i] - s[j]) / (max(tt) - min(tt))) #Ronaldo's
+      #Psi[i,j] <- exp(- w * abs(tt[i] - s[j]) / (max(tt) - min(tt))) #Ronaldo's
+      Psi[i,j] <- exp(- w * abs(tt[i] - s[j]) ) #Ronaldo's
       #Psi[i,j] <- exp(-w^2*(tt[i] - s[j])^2) #squared-exponential
     
     }
@@ -186,7 +187,8 @@ dev_psi <- function(tt, s, w=1) {
   for (i in 1:nrow(dev_Psi)) {
     for (j in 1:ncol(dev_Psi)) {
       #dev_Psi[i,j] <- (2*abs(tt[i]-s[j])/(w^2))*exp(-2*abs(tt[i]-s[j])/w) # gabriel's
-      dev_Psi[i,j] <- (-abs(tt[i]-s[j]) / (max(tt) - min(tt)))*exp(-w*abs(tt[i]-s[j]) / (max(tt) - min(tt))) # ronaldo's
+      #dev_Psi[i,j] <- (-abs(tt[i]-s[j]) / (max(tt) - min(tt)))*exp(-w*abs(tt[i]-s[j]) / (max(tt) - min(tt))) # ronaldo's
+      dev_Psi[i,j] <- (-abs(tt[i]-s[j]))*exp(-w*abs(tt[i]-s[j])) # ronaldo's
       #dev_Psi[i,j] <- (-abs(tt[i]-s[j]))*exp(log(w))*exp(-exp(log(w))*abs(tt[i]-s[j])) # ronaldo's (2)
       #dev_Psi[i,j] <- -2*w*(tt[i] - s[j])^2 * exp(-w^2*(tt[i] - s[j])^2) #squared-exponential 
     }
@@ -200,7 +202,8 @@ dev2_psi <- function(tt, s, w=1) {
   for (i in 1:nrow(dev2_Psi)) {
     for (j in 1:ncol(dev2_Psi)) {
       #dev2_Psi[i,j] <- ((4*(abs((tt[i]-s[j]))^2)/(w^4)) - 4*(abs(tt[i]-s[j])/(w^3)))*exp(-2*abs(tt[i]-s[j])/w) # gabriel's
-      dev2_Psi[i,j] <- (abs(tt[i]-s[j]) / (max(tt) - min(tt)))^2*exp(-w*abs(tt[i]-s[j]) / (max(tt) - min(tt))) # ronaldo's
+      #dev2_Psi[i,j] <- (abs(tt[i]-s[j]) / (max(tt) - min(tt)))^2*exp(-w*abs(tt[i]-s[j]) / (max(tt) - min(tt))) # ronaldo's
+      dev2_Psi[i,j] <- (abs(tt[i]-s[j]))^2*exp(-w*abs(tt[i]-s[j])) # ronaldo's
       #dev2_Psi[i,j] <- (-2*exp(-w^2*(tt[i] - s[j])^2)*(tt[i] - s[j])^2)*(1 + 2*w^2*(tt[i] - s[j])^2) #squared-exponential 
       #dev2_Psi[i,j] <- exp(-exp(log(w))*abs(tt[i]-s[j]))*((abs(tt[i]-s[j])*exp(log(w)))^2 - abs(tt[i]-s[j])*exp(log(w))) # ronaldo's (2)
     }

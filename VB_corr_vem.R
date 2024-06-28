@@ -112,14 +112,14 @@ vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 =
       for(k in 1:K){
         
         #update a1 for ki and a2 for ki
-        #a1_ki_q <- p_i[k] + mu_ki
-        #a2_ki_q <- 2 - p_i[k] - mu_ki
+        a1_ki_q <- p_i[k] + mu_ki
+        a2_ki_q <- 2 - p_i[k] - mu_ki
         
-        a1_ki_q <- p_star[k] + mu_ki
+        #a1_ki_q <- p_star[k] + mu_ki
         #a2_ki_q <- 1 - p_i[k] + mu_ki
-        a2_ki_q <- 2 - p_star[k] - mu_ki
-        
-        log_rho_ki <- sapply(0:1, function(z){(-ni[i]/2)*(E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q) + log(2*pi))-0.5*log(det(psi))-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_square_beta_i(z = z, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter, psi = psi) + z*E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q) - z*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q) + E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q)})
+        #a2_ki_q <- 2 - p_star[k] - mu_ki
+        #+ log(2*pi))-0.5*log(det(psi))
+        log_rho_ki <- sapply(0:1, function(z){(-ni[i]/2)*E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q)-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_square_beta_i(z = z, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter, psi = psi) + z*E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q) - z*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q) + E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q)})
         
         if(sum(exp(log_rho_ki)) == 0){
           cat("sum pki = 0", "iter:", iter, "\n")
@@ -153,8 +153,8 @@ vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 =
     
     #w_c <- uniroot(dev_elbo,  m=m, delta1_q = delta1_q, delta2_q = delta2_q, Xt = Xt, iter=iter, y=y, B=B, p_values=p_values, mu_beta_values=mu_beta_values, Sigma_beta= Sigma_beta, interval = c(0, 1e10), tol = convergence_threshold)$root
     
-    w_c <- optim(initial_values$w, elbo_omega, dev_elbo, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, control = list(fnscale = -1), method = "L-BFGS-B", lower = 1e-1, upper = Inf)$par
-    
+    w_c <- optim(initial_values$w, elbo_omega, dev_elbo, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, control = list(fnscale = -1), method = "L-BFGS-B", lower = 1e-10, upper = Inf)$par
+    #1e-1
     w_values <- c(w_values, w_c)      
     
     w_prev <- w
