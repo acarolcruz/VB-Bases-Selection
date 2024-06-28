@@ -111,9 +111,9 @@ vb_bs_corr_fixw <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambd
         #a1_ki_q <- p_star[k] + mu_ki
         #a2_ki_q <- 2 - p_star[k] - mu_ki
         
-        log_rho_ki <- sapply(0:1, function(z){(-ni[i]/2)*E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q)-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_square_beta_i(z = z, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter, psi = psi) + z*E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q) - z*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q) + E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q) })
+        log_rho_ki <- sapply(0:1, function(z){(-ni[i]/2)*E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q)-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_square_beta_i(z = z, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter, psi = psi) + z*E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q) + (1-z)*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q) })
         
-        
+        #-z*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q) + E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q)
         #+(1-z)*E_log_theta_ki_c(a1_ki = a1_ki_q, a2_ki = a2_ki_q)
         
         #log_rho_ki <- (-ni[i]/2)*(E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q) + log(2*pi)) - 0.5*log(det(psi)) - 0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_square_beta_i(z = 1, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter, psi = psi) + E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q)
