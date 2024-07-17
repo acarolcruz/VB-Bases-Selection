@@ -26,7 +26,7 @@ seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
 yhat <- as.numeric((out$mu_beta[seq_values[[i]]]*ifelse(out$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[i]]))
 RSS_vb = sum((yhat- y[[1]])^2)
 
-numerador <- t(y[[i]] - B[[i]]%*%(Zi_hat*out$mu_beta))%*%(y[[i]] - B[[i]]%*%diag(Zi_hat)%*%out$mu_beta)
+numerador <- t(y[[i]] - B[[i]]%*%(Zi_hat*out$mu_beta[seq_values[[i]]]))%*%(y[[i]] - B[[i]]%*%diag(Zi_hat)%*%out$mu_beta[seq_values[[i]]])
 
 GCV_k <- (1/133)*numerador/((1 - (1/133)*sum(diag(S_k)))^2) 
 
