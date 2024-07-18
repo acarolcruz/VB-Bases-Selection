@@ -2,11 +2,11 @@ elbo_res <- c()
 
 case <- 1
 nsim <- 1:100
-scenario <-  "Simulation5_corr_w"
-K <- 15
+scenario <-  "/Users/carol/Documents/Phd STATISTICS - Western/Research/VB-Bases-Selection/Results/Simulations results used in paper/Simulation1_corr_w"
+K <- 10
 m <- 5
 
-output_plot <- "Simulation5_1"
+output_plot <- "Simulation1_1"
 
 # With no random initialization ----
 
@@ -64,6 +64,11 @@ p_values <- do.call("rbind", res[['p']])
 # final probabilities across datasets
 z_values <- matrix(NA, length(nsim), K*m)
 for(k in 1:(K*m)){z_values[,k] = ifelse(p_values[,k] > 0.5, 1, 0)}
+
+# TP and FP per curve
+seq_values <- lapply(c(seq(1, m*K, K)), function(x){seq(x,x+K-1)})
+TP <- colSums(sapply(1:m, function(i){apply(z_values[,seq_values[[i]]], 2, sum)})[c(1,3,4,6,7,8),])/(6*max(nsim))
+FP <- colSums(sapply(1:m, function(i){apply(z_values[,seq_values[[i]]], 2, sum)})[c(2,5,9,10),])/(6*max(nsim))
 
 # computing etak
 eta <- matrix(NA, length(nsim), K)
