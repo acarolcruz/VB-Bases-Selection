@@ -10,3 +10,8 @@
 /PDFs
 /Results
 *.Rproj
+*.png
+/Simulation5_corr_w
+/Temperature_gibbs
+/Temperature_year_gibbs
+*.sh
