@@ -1,5 +1,4 @@
 # Real data application
-source("sim_data_corr.R")
 source("elbo_formulas_corr.R")
 source("aux_fun_corr.R")
 source("VB_corr_vem.R")
@@ -11,49 +10,51 @@ library(faraway)
 
 data(mcycle)
 plot(accel~jitter(mcycle$time),mcycle, ylab = "Head acceleration (in units of g)", xlab = "time in ms")
-y = list(mcycle$accel)
+y <- list(mcycle$accel)
 Xt <- jitter(mcycle$times)
 
-# Regression splines:
-regression_splines <- lm(y[[1]] ~ B[[1]] - 1)
-summary(regression_splines) #MSE = 23.16**2 (536.39)
-
-#bs(Xt,20)
-
 K <- 30
-basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
+basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), norder = 4, nbasis = K)
 B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
 
 initial_values <- list(p = rep(1, K), delta2 = 95484.5, lambda2 = 1000, w = 10)
 system.time(out_mcycle_K30 <- vb_bs_corr(y = y, B = B, m = 1, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 100, delta_2 = 99*30, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt))
 
-#   user  system elapsed 
-# 71.736   0.428  72.643 
+#user  system elapsed 
+#67.104   0.431  68.609
 
 # Compute R2 vem
+i = 1
 seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
 yhat <- as.numeric((out_mcycle_K30$mu_beta[seq_values[[i]]]*ifelse(out_mcycle_K30$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[i]]))
-RSS_vb = sum((yhat- y[[1]])^2)
-TSS = sum((y[[1]] - mean(y[[1]]))^2) 
-R2a_vb = 1 - (RSS_vb/(length(y[[1]])-sum(ifelse(out_mcycle_K30$p[seq_values[[i]]] > 0.50, 1, 0))))/(TSS/(length(y[[1]])-1))
+RSS_vb <- sum((yhat- y[[1]])^2)
+TSS <- sum((y[[1]] - mean(y[[1]]))^2) 
+R2a_vb <- 1 - (RSS_vb/(length(y[[1]])-sum(ifelse(out_mcycle_K30$p[seq_values[[i]]] > 0.50, 1, 0))))/(TSS/(length(y[[1]])-1))
 R2a_vb
-#0.7936501
+#0.7932
+#0.7917
 
 K <- 20
 basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
 B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
 
-initial_values <- list(p = rep(1, K), delta2 = 40000, lambda2 = 100, w = 10)#91786.5, before: 92000 delta1 = 100, delta2=99*30
+# Regression splines:
+regression_splines <- lm(y[[1]] ~ B[[1]] - 1)
+summary(regression_splines) #MSE = 23.17**2 (536.39)
+
+initial_values <- list(p = rep(1, K), delta2 = 40000, lambda2 = 1000, w = 10) 
 system.time(out_mcycle_K20 <- vb_bs_corr(y = y, B = B, m = 1, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 0.1, delta_2 = 0.1, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt))
 #user  system elapsed 
-# 47.745   0.137  48.066
+#55.641   0.263  56.165 
 
 seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
 yhat <- as.numeric((out_mcycle_K20$mu_beta[seq_values[[i]]]*ifelse(out_mcycle_K20$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[i]]))
-RSS_vb = sum((yhat- y[[1]])^2)
+RSS_vb = sum((yhat - y[[1]])^2)
 TSS = sum((y[[1]] - mean(y[[1]]))^2) 
 R2a_vb = 1 - (RSS_vb/(length(y[[1]])-sum(ifelse(out_mcycle_K20$p[seq_values[[i]]] > 0.50, 1, 0))))/(TSS/(length(y[[1]])-1))
-#0.78729
+R2a_vb
+#0.7874
+#0.7873
 
 K <- 15
 basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
@@ -62,17 +63,66 @@ B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderi
 initial_values <- list(p = rep(1, K), delta2 = 91517, lambda2 = 100, w = 10)
 system.time(out_mcycle_K15 <- vb_bs_corr(y = y, B = B, m = 1, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 100, delta_2 = 99*30, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt))
 
-#   user  system elapsed 
-# 39.756   0.160  40.021 
+#user  system elapsed 
+#44.956   0.237  45.618
 
 seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
 yhat <- as.numeric((out_mcycle_K15$mu_beta[seq_values[[i]]]*ifelse(out_mcycle_K15$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[i]]))
-RSS_vb = sum((yhat- y[[1]])^2)
-TSS = sum((y[[1]] - mean(y[[1]]))^2) 
-R2a_vb = 1 - (RSS_vb/(length(y[[1]])-sum(ifelse(out_mcycle_K15$p[seq_values[[i]]] > 0.50, 1, 0))))/(TSS/(length(y[[1]])-1))
-#0.7854
+RSS_vb <- sum((yhat- y[[1]])^2)
+TSS <- sum((y[[1]] - mean(y[[1]]))^2) 
+R2a_vb <- 1 - (RSS_vb/(length(y[[1]])-sum(ifelse(out_mcycle_K15$p[seq_values[[i]]] > 0.50, 1, 0))))/(TSS/(length(y[[1]])-1))
+R2a_vb
+#0.7839
+#0.7869
 
-# independent case ----
+# gcv ----
+
+gcv <- function(i, out, y, B, seq_values){
+  p_i <- out$p[seq_values[[i]]]
+  Zi_hat <- ifelse(out$p[seq_values[[i]]] > 0.50, 1, 0)
+  
+  EG_i <- p_i*t(B[[1]])
+  
+  S_k <- E_inv_sigma2(out$delta1, out$delta2)*B[[1]]%*%diag(Zi_hat)%*%out$Sigma_beta[,,i]%*%EG_i%*%solve(calPsi(Xt, Xt, w = out$w))
+  
+  S_k <- E_inv_sigma2(out$delta1, out$delta2)*B[[1]]%*%diag(Zi_hat)%*%solve(E_inv_sigma2(out$delta1, out$delta2)*(diag(E_inv_tau2(out$lambda1, out$lambda2), K) + EG_i%*%solve(calPsi(Xt, Xt, w = out$w))%*%t(EG_i)))%*%EG_i%*%solve(calPsi(Xt, Xt, out$w))
+  
+  yhat <- as.numeric((out$mu_beta[seq_values[[i]]]*ifelse(out$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[1]]))
+  RSS_vb = sum((yhat- y[[1]])^2)
+  
+  numerador <- t(y[[i]] - B[[1]]%*%(Zi_hat*out$mu_beta[seq_values[[i]]]))%*%(y[[i]] - B[[1]]%*%diag(Zi_hat)%*%out$mu_beta[seq_values[[i]]])
+  
+  GCV_k <- (1/length(Xt))*numerador/((1 - (1/length(Xt))*sum(diag(S_k)))^2) 
+  return(GCV_k)
+}  
+
+K <- 15
+basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
+B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
+seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
+
+gcv_motor15 <- gcv(i=1,out=out_mcycle_K15,y=y,B=B, seq_values = seq_values)
+
+K <- 20
+basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
+B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
+seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
+
+gcv_motor20 <- gcv(i=1,out=out_mcycle_K20,y=y,B=B, seq_values = seq_values)
+
+K <- 30
+basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
+B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
+seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
+
+gcv_motor30 <- gcv(i=1,out=out_mcycle_K30,y=y,B=B, seq_values = seq_values)
+
+# optimal K = 20 (smaller gcv)
+gcv_motor15 # 516.7975
+gcv_motor20 # 515.1676
+gcv_motor30 # 519.8512
+
+# independent case (do not run)----
 source("expected_values.R")
 source("elbo_formulas.R")
 source('elbo.R')
@@ -89,24 +139,32 @@ TSS = sum((y[[1]] - mean(y[[1]]))^2)
 R2a_vb = 1 - (RSS_vb/(length(y[[1]])-sum(ifelse(out_mcycle_K20_ind$p[seq_values[[i]]] > 0.50, 1, 0))))/(TSS/(length(y[[1]])-1))
 
 # Bayesian lasso ----
+K <- 20
+basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
+B <- lapply(1, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
+
 system.time(BL <- blasso(X = B[[1]], y = y[[1]], T = 10000, thin = 1, 
                          beta=rep(-1,1*20),lambda2=1,s2=1,
-                         RJ = F, rao.s2=F, icept = F, normalize=F))
+                         RJ = F, rao.s2=F, icept = T, normalize=F))
 
 # user  system elapsed 
 # 0.275   0.009   0.406 
+# 0.158   0.004   0.160
+# 0.157   0.004   0.163
 
-beta_BL <-  apply(BL$beta,2, mean)
+beta_BL <-  apply(BL$beta, 2, mean)
 estimativa_funcionalBL <- B[[1]]%*%beta_BL
 
 RSS <- sum((y[[1]]-estimativa_funcionalBL)^2)
 TSS <- sum((y[[1]] - mean(y[[1]]))^2)
 K_model <- sum(abs(beta_BL)>0)
 R2_adj_BL <- 1 - mean((RSS/(length(y[[1]])-K_model))/(TSS/(length(y[[1]]-1))))
-# 0.7457
+R2_adj_BL
+# 0.7464
+# 0.7619
 
 # LASSO ----
-regularizador=seq(0.001,1,length=9)
+regularizador <- seq(0.001, 1, length = 9)
 
 result_LASSO <- NULL
 R2_adj_LASSO_mat <- c()
@@ -115,22 +173,23 @@ for(lambda in 1:length(regularizador)){
   #setTxtProgressBar(pb,lambda)
   
   lambdaLIVROtexto <- regularizador[lambda] #parametrização de livro texto.
-  time_lasso <- c(time_lasso, system.time(LASSO <- glmnet(B[[1]], y[[1]], alpha = 1,lambda = lambdaLIVROtexto/(2*nrow(B[[1]])), standardize = F, intercept = F)))
+  time_lasso <- c(time_lasso, system.time(LASSO <- glmnet(B[[1]], y[[1]], alpha = 1,lambda = lambdaLIVROtexto/(2*nrow(B[[1]])), standardize = T, intercept = F)))
   result_LASSO[[lambda]] <- LASSO
   betaLASSO <- as.numeric(coef(LASSO)[-1])
   estimativa_funcional_lasso <- B[[1]]%*%betaLASSO
   
-  RSS=sum((y[[1]] - estimativa_funcional)^2)
+  RSS=sum((y[[1]] - estimativa_funcional_lasso)^2)
   TSS=sum((y[[1]] - mean(y[[1]]))^2)
   K_model <- sum(abs(betaLASSO)>0)
   R2_adj_LASSO_mat[lambda] <- 1-mean((RSS/(length(y[[1]])-K_model))/(TSS/(length(y[[1]])-1)))
 }
 mean(R2_adj_LASSO_mat)
-lambda = which.max(R2_adj_LASSO_mat)
-# 0.7715
+lambda <- which.max(R2_adj_LASSO_mat)
+# 0.7712
+# 0.7729
 
 # to plot LASSO's results
-LASSO <- glmnet(B[[1]], y[[1]], alpha = 1,lambda = lambdaLIVROtexto/(2*nrow(B[[1]])), standardize = F, intercept = F)
+LASSO <- glmnet(B[[1]], y[[1]], alpha = 1, lambda = regularizador[10]/(2*nrow(B[[1]])), standardize = F, intercept = F)
 betaLASSO <- as.numeric(coef(LASSO)[-1])
 estimativa_funcional_lasso <- B[[1]]%*%betaLASSO
 
@@ -286,65 +345,6 @@ for(i in 1:1){
 
 
 
-# Second dataset - 5 curves
-
-library(fda)
-data = CanadianWeather
-y = lapply(c(8,9,17,21,23), function(x){as.numeric(data$dailyAv[100:300,x,2])})
-Xt <- seq(1:length(y[[1]]))
-sds = lapply(1:5, function(x){sd(y[[x]])})
-y_new <- lapply(1:5, function(x){y[[x]]/sds[[x]]})
-cum_y <- lapply(1:5, function(x){cumsum(y_new[[x]])})
-plot(y_new[[1]]~Xt, type = "l", ylim = c(0,8))
-lines(y_new[[2]]~Xt, type = "l", col = "gray")
-lines(y_new[[3]]~Xt, type = "l", col = "red")
-lines(y_new[[4]]~Xt, type = "l", col = "blue")
-lines(y_new[[5]]~Xt, type = "l", col = "green")
-
-plot(Xt, cumsum(y_new[[1]]))
-
-K <- 50
-basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
-fourier_basis_data <- create.fourier.basis(range(Xt), nbasis = K)
-B <- lapply(1:5, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)}) #basis
-B <- lapply(1:5, function(x){getbasismatrix(Xt, fourier_basis_data, nderiv = 0)[,-1]}) #fourier
-
-# regression spline
-library(splines)
-regression_splines <- lm(y[[1]] ~ bs(Xt,30))
-summary(regression_splines) #MSE = (0.885^2)
-
-result <- smooth.spline(Xt, y_new[[1]])
-yfdPar <- fdPar(basisBspline_Simulated_Data, Lfdobj=2, lambda = 1e-2)
-yfd <- smooth.basis(Xt, y_new[[1]], yfdPar)$fd 
-yhat <- eval.fd(Xt, yfd)
-
-R <- smooth.basis(Xt, y_new[[1]], yfdPar)$penmat 
-p <- smooth.basis(Xt, y_new[[1]], yfdPar)$df # cost in df
-s_df <- length(Xt)-p # the higher s_df the higher lambda
-sigma2hat <- (sum((Xt-yhat)^2))/(s_df)
-
-plot(y_new[[1]] ~ Xt, col=gray(0.75)) 
-lines(Xt, yhat, col="red", type="l")
-
-K <- 10
-basisBspline_Simulated_Data <- create.bspline.basis(range(Xt),norder = 4, nbasis = K)
-fourier_basis_data <- create.fourier.basis(range(Xt), nbasis = K)
-B <- lapply(1:5, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)}) #basis
-B <- lapply(1:5, function(x){getbasismatrix(Xt, fourier_basis_data, nderiv = 0)}) #fourier
-
-
-initial_values <- list(p = rep(1, K),  delta2 = 704, lambda2 = 1000, w = 10) #500 for K=50, 473 for k= 30, 456 for K=20, 448 for K=15, 430 for K=10, 
-out_weather_K20 <- vb_bs_corr(y=y_new, B = B, m = 5, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 100, delta_2 = 99*0.5, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt)
-
-seq_values <- lapply(c(seq(1, 1*K, K)), function(x){seq(x,x+K-1)})
-par(mfrow=c(1,1), mar = c(5, 2, 2, 0.1), cex = 1) 
-for(i in 1:5){
-  plot(y_new[[i]]~Xt, ylab = expression(g[t]), xlab = expression(t))
-  lines(Xt, y = as.numeric((out_weather_K20$mu_beta[seq_values[[i]]]*ifelse(out_weather_K20$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[i]])), lwd = 2, col= "red", type = "l", ylab = expression(g[t]), xlab = expression(t))
-  print(ifelse(out_weather_K20$p[seq_values[[i]]] > 0.50, 1, 0))
-}
-
 
 # Third dataset
 
@@ -355,7 +355,6 @@ girl.ht <- t(as.matrix(growth$hgtf))
 Xt <- as.numeric(colnames(boy.ht))
 
 plot(girl.ht[10,] ~ Xt)
-lines(Xt, boy.ht[10,])
 
 y <- lapply(1:10, function(i) as.numeric(boy.ht[i,]))
 Xt <- growth$age
@@ -363,7 +362,7 @@ Xt <- growth$age
 sds <- lapply(1:10, function(x){sd(y[[x]])})
 y_growth <- lapply(1:10, function(x){y[[x]]/sds[[x]]})
 
-(y[[1]]-mean(y[[1]]))%*%t(y[[1]]-mean(y[[1]]))
+#(y[[1]]-mean(y[[1]]))%*%t(y[[1]]-mean(y[[1]]))
 
 
 library(splines)
@@ -382,31 +381,52 @@ p <- smooth.basis(Xt, y_growth[[1]], yfdPar)$df # cost in df
 s_df <- length(Xt)-p # the higher s_df the higher lambda
 sigma2hat <- (sum((Xt-yhat)^2))/(s_df)
 
+K <- 20
+basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), nbasis = K, norder = 6)
+B <- lapply(1:10, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
+
+initial_values <- list(p = rep(1, K),  delta2 = 12, lambda2 = 10000, w = 10)
+
+#small prior mean, but high enough variance (cv = 5.5)
+out_growth_K20 <- vb_bs_corr(y = y_growth, B = B, m = 10, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 1, delta_2 = 0.9*0.005, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt)
+
+plot(Xt, calPsi(Xt,Xt,w=out_growth_K20$w)[1,])
+
+seq_values <- lapply(c(seq(1, 10*K, K)), function(x){seq(x,x+K-1)})
+par(mfrow=c(1,1), mar = c(5, 2, 2, 0.1), cex = 1) 
+for(i in 1:10){
+  plot(y[[i]]~Xt, ylab = expression(g[t]), xlab = expression(t), ylim = c(70, 200))
+  LL <- NULL
+  UL <- NULL
+  estimates <- NULL
+  
+  betas_sample <- MASS::mvrnorm(200, mu = out_growth_K20$mu_beta[seq_values[[i]]],  Sigma = out_growth_K20$Sigma_beta[,,i])
+  z_sample <- matrix(rbinom(20*200, 1, prob = out_growth_K20$p[seq_values[[i]]]), ncol = 20, byrow = TRUE)
+  
+  estimates <- cbind(estimates, (betas_sample*z_sample))
+  
+  curve_f <- list()
+  for(s in 1:200){
+    curve_f[[s]] <- estimates[s,]%*%t(B[[i]])
+  }  
+  
+  LL <- apply(do.call(rbind,curve_f),2,function(i)quantile(i,probs = c(0.025,0.975)))[1,]
+  UL <-  apply(do.call(rbind,curve_f),2,function(i)quantile(i,probs = c(0.025,0.975)))[2,]
+  
+  lines(Xt, y = as.numeric((out_growth_K20$mu_beta[seq_values[[i]]]*ifelse(out_growth_K20$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B[[i]]))*sds[[i]], lwd = 2, col= "red", type = "l", ylab = expression(g[t]), xlab = expression(t))
+  lines(Xt, LL*sds[[i]], col = "black", lty = 2)
+  lines(Xt, UL*sds[[i]], col = "black", lty = 2)
+  print(ifelse(out_growth_K20$p[seq_values[[i]]] > 0.50, 1, 0))
+}
+
 
 
 K <- 10
 basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), nbasis = K, norder = 6)
 B <- lapply(1:10, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
 
-initial_values <- list(p = rep(1, K),  delta2 = 16063.4, lambda2 = 1000, w = 2)
-out_growth_K20 <- vb_bs_corr(y = y_growth, B = B, m = 10, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 0.1, delta_2 = 0.1, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt)
-
-K <- 10
-basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), nbasis = K, norder = 4)
-B <- lapply(1:10, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
-
-initial_values <- list(p = rep(1, K),  delta2 = 14, lambda2 = 10000, w = 10)
-out_growth_K10 <- vb_bs_corr(y = y_growth, B = B, m = 10, mu_ki = 0.5, lambda_1 = 10^(-10), lambda_2 = 10^(-10), delta_1 = 100, delta_2 = 99*0.8, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt)
-
-
-K <- 10
-basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), nbasis = K, norder = 6)
-B <- lapply(1:10, function(x){getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)})
-
-initial_values <- list(p = rep(1, K),  delta2 = 14, lambda2 = 10000, w = 2)
-out_growth_K10 <- vb_bs_corr(y = y_growth, B = B, m = 10, mu_ki = 0.5, lambda_1 = 10^(-10), lambda_2 = 10^(-10), delta_1 = 100, delta_2 = 99*0.8, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt)
-
-
+initial_values <- list(p = rep(1, K),  delta2 = 10, lambda2 = 1000, w = 10)
+out_growth_K10 <- vb_bs_corr(y = y_growth, B = B, m = 10, mu_ki = 0.5, lambda_1 = 1e-6, lambda_2 = 1e-6, delta_1 = 1, delta_2 = 0.9*0.005, maxIter = 1000, K = K, initial_values, convergence_threshold = 0.001, Xt = Xt)
 
 seq_values <- lapply(c(seq(1, 10*K, K)), function(x){seq(x,x+K-1)})
 par(mfrow=c(1,1), mar = c(5, 2, 2, 0.1), cex = 1) 

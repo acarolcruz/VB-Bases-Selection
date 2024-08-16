@@ -1,5 +1,4 @@
 # VEM 
-
 #' Implements VB for the bases selection in scalar-on-function functional regression
 #' 
 #' @param y list containing the values for the outcome variable
@@ -17,8 +16,8 @@
 #' 
 
 
-vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(-10), delta_1 = 10^(-10), delta_2 = 10^(-10), maxIter = 1000, K = 10, initial_values, convergence_threshold = 0.01, Xt = seq(0, 1, length = times)){
-  
+vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(-10), delta_1 = 10^(-10), delta_2 = 10^(-10), maxIter = 1000, K = 10, initial_values, convergence_threshold = 0.01, Xt = seq(0, 1, length = times), lower_opt = 0.1){
+  #browser()
   converged <- FALSE
   
   w_values <- c()
@@ -27,6 +26,7 @@ vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 =
   w <- initial_values$w
 
   # Calculate the covariance matrix for initial value of w
+  #psi <- calPsi(Xt, Xt, w = initial_values$w)
   psi <- calPsi(Xt, Xt, w = initial_values$w)
   
   K <- ncol(B[[1]]) #for fourier bases, there is another columns for the intercept
@@ -124,6 +124,8 @@ vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 =
         if(sum(exp(log_rho_ki)) == 0){
           cat("sum pki = 0", "iter:", iter, "\n")
           p_ki_1 <- c(0,1)[which.max(log_rho_ki)]
+        } else if (sum(exp(log_rho_ki)) == Inf) {
+          p_ki_1 <- c(0,1)[which.max(log_rho_ki)]
         } else {
           p_ki_1 <- exp(log_rho_ki[2])/sum(exp(log_rho_ki))
           
@@ -146,21 +148,31 @@ vb_bs_corr <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 =
       
     }
     
-    #res <- optimize(f = elbo_omega, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, interval = c(0, 1e10), maximum = TRUE)
+    #res <- optimize(f = elbo_omega, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, interval = c(1e-13, 1e10), maximum = TRUE)
     
     #w_c <- res$maximum
     
     
     #w_c <- uniroot(dev_elbo,  m=m, delta1_q = delta1_q, delta2_q = delta2_q, Xt = Xt, iter=iter, y=y, B=B, p_values=p_values, mu_beta_values=mu_beta_values, Sigma_beta= Sigma_beta, interval = c(0, 1e10), tol = convergence_threshold)$root
+    #browser()
+    # tryCatch
+    w_c <- tryCatch(optim(w, elbo_omega, dev_elbo, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, control = list(fnscale = -1), method = "L-BFGS-B", lower = lower_opt, upper = 1e10)$par, error = function(e) "Error", finally = "finally")
+    while (w_c == "Error") {
+      lower_opt <- lower_opt + 1
+      w_c <- tryCatch(optim(w, elbo_omega, dev_elbo, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, control = list(fnscale = -1), method = "L-BFGS-B", lower = lower_opt, upper = 1e10)$par, error = function(e) "Error", finally = "finally")
+    }
     
-    w_c <- optim(initial_values$w, elbo_omega, dev_elbo, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, control = list(fnscale = -1), method = "L-BFGS-B", lower = 1e-10, upper = Inf)$par
-    #1e-1
+    #w_c <- optim(initial_values$w, elbo_omega, y = y, Xt = Xt, B = B, ni = ni, m = m, K = K, iter = iter, delta_1 = delta_1, delta_2 = delta_2, lambda_1 = lambda_1, lambda_2 = lambda_2, delta1_q = delta1_q, delta2_values = delta2_values, mu_beta_values = mu_beta_values, lambda1_q = lambda1_q, lambda2_values = lambda2_values, a1_values = a1_values, a2_values = a2_values, Sigma_beta = Sigma_beta, p_values = p_values, mu_ki = mu_ki, control = list(fnscale = -1), method = "BFGS")$par
+#1e2
+    
+    print(w_c)
     w_values <- c(w_values, w_c)      
     
     w_prev <- w
     w <- w_c
   
     # Calculate the covariance matrix for initial value of w
+    #psi <- calPsi(Xt, Xt, w = w)
     psi <- calPsi(Xt, Xt, w = w)
     
     #elbo_c <- res$objective

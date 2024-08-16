@@ -114,7 +114,9 @@ vb_bs <- function(y, B, m = 5, mu_ki = 1/2, lambda_1 = 10^(-10), lambda_2 = 10^(
         if(sum(exp(log_rho_ki)) == 0){
           #cat("sum pki = 0", "iter:", iter, "\n")
           p_ki_1 <- c(0,1)[which.max(log_rho_ki)]
-        } else {
+        } else if (sum(exp(log_rho_ki)) == Inf) {
+          p_ki_1 <- c(0,1)[which.max(log_rho_ki)]
+          } else {
           p_ki_1 <- exp(((-ni[i]/2)*E_log_sigma2(delta1 = delta1_q, delta2 = delta2_q)-0.5*E_inv_sigma2(delta1 = delta1_q, delta2 = delta2_q)*E_Ct_C(z = 1, i = i, p = p_star, mu = mu_beta_values, Sigma = Sigma_beta, B = B, y = y, k = k, K = K, iter = iter) + E_log_theta_ki(a1_ki = a1_ki_q, a2_ki = a2_ki_q)))/sum(exp(log_rho_ki))
         }
         
