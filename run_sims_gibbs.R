@@ -1,8 +1,8 @@
 # run gibbs a simulated scenario with multiples datasets
 
-run_sims_gibbs <- function(S = S, save_folder = save_folder, scenario = scenario, m = m, times = times, ordem = ordem, K = K, y = y, B = B, coef = coef, seed = seed, sigma = sigma, mu_ki = mu_ki, lambda1 = lambda1, lambda2 = lambda2, delta1 = delta1, delta2 = delta2, maxIter = maxIter, initial_values = initial_values){
+run_sims_gibbs <- function(S = S, save_folder = save_folder, scenario = scenario, m = m, times = times, ordem = ordem, K = K, y = y, B = B, coef = coef, seed = seed, sigma = sigma, mu_ki = mu_ki, lambda1 = lambda1, lambda2 = lambda2, delta1 = delta1, delta2 = delta2, maxIter = maxIter, initial_values = initial_values, w = w, corr = corr, basis_type = basis_type){
   
-  source("sim_data.R")
+  #source("sim_data.R")
   source("run_gibbs.R")
   
   
@@ -14,7 +14,8 @@ run_sims_gibbs <- function(S = S, save_folder = save_folder, scenario = scenario
   cls <- makeForkCluster(detectCores())
   outt <- parSapply(cls, 1:S, run_gibbs, save_folder = save_folder, scenario = scenario, m = m, times = times, ordem = ordem, K = K, 
                     coef = coef, seed = seed, sigma = sigma, mu_ki = mu_ki, lambda1 = lambda1, lambda2 = lambda2, delta1 = delta1, delta2 = delta2,
-                    maxIter = maxIter, initial_values = initial_values)
+                    maxIter = maxIter, initial_values = initial_values, w = w, 
+                    corr = corr, basis_type = basis_type)
   stopCluster(cls)
   
   return(outt)

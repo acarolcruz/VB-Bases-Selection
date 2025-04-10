@@ -2,7 +2,7 @@ elbo_res <- c()
 
 case <- 1
 nsim <- 1:100
-scenario <-  "/Users/carol/Documents/Phd STATISTICS - Western/Research/VB-Bases-Selection/Results/Simulations results used in paper/Simulation1_corr_w"
+scenario <-  "/Users/carol/Documents/Phd STATISTICS - Western/Research/VB-Bases-Selection/Results/Simulations results used in paper/Simulation3_corr_w"
 K <- 10
 m <- 5
 
@@ -67,8 +67,22 @@ for(k in 1:(K*m)){z_values[,k] = ifelse(p_values[,k] > 0.5, 1, 0)}
 
 # TP and FP per curve
 seq_values <- lapply(c(seq(1, m*K, K)), function(x){seq(x,x+K-1)})
-TP <- colSums(sapply(1:m, function(i){apply(z_values[,seq_values[[i]]], 2, sum)})[c(1,3,4,6,7,8),])/(6*max(nsim))
-FP <- colSums(sapply(1:m, function(i){apply(z_values[,seq_values[[i]]], 2, sum)})[c(2,5,9,10),])/(6*max(nsim))
+TP <- (6*max(nsim))/colSums(sapply(1:m, function(i){apply(z_values[,seq_values[[i]]], 2, sum)}))
+FP <- colSums(sapply(1:m, function(i){apply(z_values[,seq_values[[i]]], 2, sum)})[c(2,5,9,10),])/(4*max(nsim))
+
+#per dataset and curve, then compute the mean over datasets (simulated scenario 1 - Bsplines)
+seq_values <- lapply(c(seq(1, m*K, K)), function(x){seq(x,x+K-1)})
+true <- c(1,0,1,1,0,1,1,1,0,0)
+Sens <- sapply(1:m, function(i){mean(rowSums(z_values[,seq_values[[i]]][,c(1,3,4,6,7,8)])/6)})
+Spec <- sapply(1:m, function(i){mean(1 - rowSums(z_values[,seq_values[[i]]][,c(2,5,9,10)])/4)})
+Acc <- sapply(1:m, function(i){mean(rowSums(z_values[,seq_values[[i]]] == matrix(rep(true,100), ncol = 10, byrow = T))/10)})
+
+#per dataset and curve, then compute the mean over datasets (simulated scenario 3 - Fourier)
+seq_values <- lapply(c(seq(1, m*K, K)), function(x){seq(x,x+K-1)})
+true <- c(0,1,1,0,0,0,0,0,0,0)
+Sens <- sapply(1:m, function(i){mean(rowSums(z_values[,seq_values[[i]]][,c(2,3)])/2)})
+Spec <- sapply(1:m, function(i){mean(1 - rowSums(z_values[,seq_values[[i]]][,c(1,4,5,6,7,8,9,10)])/8)})
+Acc <- sapply(1:m, function(i){mean(rowSums(z_values[,seq_values[[i]]] == matrix(rep(true,100), ncol = 10, byrow = T))/10)})
 
 # computing etak
 eta <- matrix(NA, length(nsim), K)
@@ -81,6 +95,24 @@ for(k in 1:K){
 
 apply(eta, 2, mean)
 apply(eta, 2, sd)
+
+z_final <- matrix(NA, length(nsim), K)
+for(k in 1:K){
+  z_final[,k] <- apply(z_values[,grep(paste0("^beta_", k, "_[0-9]+$"),
+                                colnames(mu_beta_values))], 1, Mode)
+} 
+
+#per dataset and mean curve, then compute the mean over the datasets(simulated scenario 1 - Bsplines)
+true <- c(1,0,1,1,0,1,1,1,0,0)
+Sens <- mean(rowSums(z_final[,c(1,3,4,6,7,8)])/6)
+Spec <- mean(1 - rowSums(z_final[,c(2,5,9,10)])/4)
+Acc <- mean(rowSums(z_final == matrix(rep(true,100), ncol = 10, byrow = T))/10)
+
+#per dataset and mean curve curve, then compute the mean over datasets (simulated scenario 3 - Fourier)
+true <- c(0,1,1,0,0,0,0,0,0,0)
+Sens <- mean(rowSums(z_final[,c(2,3)])/2)
+Spec <- mean(1 - rowSums(z_final[,c(1,4,5,6,7,8,9,10)])/8)
+Acc <- mean(rowSums(z_final == matrix(rep(true,100), ncol = 10, byrow = T))/10)
 
 # plot with same format as Pedro's paper:
 {
@@ -106,6 +138,13 @@ axis(2, 1:K, labels=c(expression(hat(xi)[1]),
 abline(v = seq(-2,2, by = 0.5), lty = 2)
 dev.off()
 }
+
+# Boxplot of w
+boxplot(res$w)
+mean(res$w)
+median(res$w)
+quantile(res$w, c(0.25,0.75))
+sd(res$w)
 
 Mode <- function(x) {
   ux <- unique(x)

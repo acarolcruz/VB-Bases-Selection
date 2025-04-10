@@ -28,4 +28,4 @@ save_results_pos <- function(scenario = "Simulation1_Gibbs_paper", chain = 1, si
   cat("Results saved in folder \n")
 }
 
-for(sim in 1:100){save_results_pos(scenario = "Simulation2_Gibbs_paper 3", chain = 1, sim = sim, startpoint_sampling = 50)}
+for(sim in 1:100){save_results_pos(scenario = "Simulation2_Gibbs_miss_paper", chain = 2, sim = sim, startpoint_sampling = 50)}

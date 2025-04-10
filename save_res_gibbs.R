@@ -1,17 +1,18 @@
 # Run this code after checking convergence and merging chain results
-output_plot = "Simulation1_gibbs_2"
+output_plot = "Simulation1_gibbs_miss_paper"
+folder <- "Simulation1_gibbs_miss_paper"
 
 betas <- matrix(NA, nrow = 100, ncol = 50)
 z <- matrix(NA, nrow = 100, ncol = 50)
 
 for(sim in 1:100){
-    betas[sim,] <- scan(paste0("Simulation2_Gibbs_paper 3/Sim", sim, "betas.txt"))
-    z[sim,] <- scan(paste0("Simulation2_Gibbs_paper 3/Sim", sim, "Z.txt"))
+    betas[sim,] <- scan(paste0(folder, "/Sim", sim, "betas.txt"))
+    z[sim,] <- scan(paste0(folder,"/Sim", sim, "Z.txt"))
 }
 
 tempo <- matrix(NA, nrow = 2, ncol = 100)
 for(chain in 1:2){
-  tempo[chain,] <- scan(paste0("Simulation2_Gibbs_paper 3/chain", chain, "/tempo.txt"))
+  tempo[chain,] <- scan(paste0(folder,"/chain", chain, "/tempo.txt"))
 }
 
 rowSums(tempo)
@@ -113,9 +114,9 @@ ETI_MCMC <- apply(gi_t_MCMC, 2, function(x){quantile(x, c(0.025, 0.975))})
 
 sim = 20
 
-load(paste0(paste0("Simulation2_Gibbs_paper 3/chain1/Sim", sim, "IterGibbs_sample.RData")))
+load(paste0(paste0(folder,"/chain1/Sim", sim, "IterGibbs_sample.RData")))
 out_chain1 <- res1
-load(paste0(paste0("Simulation2_Gibbs_paper 3/chain2/Sim", sim, "IterGibbs_sample.RData")))
+load(paste0(paste0(folder,"/chain2/Sim", sim, "IterGibbs_sample.RData")))
 out_chain2 <- res1
 
 betas_sample <- rbind(out_chain1$pars_mat[,1:50], out_chain2$pars_mat[,1:50])
@@ -150,6 +151,7 @@ UL <-  apply(do.call(rbind,curve_f),2,function(i)quantile(i,probs = c(0.025,0.97
  lines(x = seq(0, 1, length = 100), y = apply(eta_plot, 2, mean)%*%t(B),lwd = 2, lty = 2, col= "red")
   lines(x = seq(0, 1, length = 100), y = LL, lwd = 2, lty = 3)
   lines(x = seq(0, 1, length = 100), y = UL, lwd = 2, lty = 3)
+  #polygon(c(Xt, rev(Xt)), c(LL, rev(UL)), col = "#00000060", border = NA)
   legend("topright", lwd = 2, lty = c(2, 1, 3), col = c("red", "blue", "black"), legend= c("Estimated curve", "True curve", "Credible band"))
 }
 dev.off()

@@ -3,12 +3,15 @@
 source("elbo_formulas_corr.R")
 source("aux_fun_corr.R")
 source("VB_corr_vem.R")
+source('aux_weather.R')
 
 
 # Second dataset - 6 curves
 
 library(fda)
 library(invgamma)
+library(glmnet)
+library(monomvn)
 data <- CanadianWeather
 cities <- c('Montreal','Quebec', 'Arvida', 'Bagottville', 'Sherbrooke', "Vancouver")
 y = lapply(1:6, function(x){as.numeric(data$dailyAv[1:365,cities[x],1])}) #temperature
@@ -163,12 +166,52 @@ B_all[[2]] <- getbasismatrix(Xt, basisBspline_Simulated_Data, nderiv = 0)
 
 K_all <- optimal_K
 
+# smoothing splines
+loglam  = seq(1,9,0.25)
+nlam    = length(loglam)
+dfsave  = rep(NA,nlam)
+gcvsave = rep(NA,nlam)
+
+beta_ss <- NULL
+df <- c()
+for (i in 1:6){
+  basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), norder = 4, nbasis = 30)
+  if(i %in% c(1,2)){basisBspline_Simulated_Data <- create.bspline.basis(range(Xt), norder = 4, nbasis = 20)
+}
+  for (ilam in 1:nlam) {
+    cat(paste('log10 lambda = ',loglam[ilam], '\n '))
+    lambda   = 10^loglam[ilam]
+    fdParobj = fdPar(basisBspline_Simulated_Data, 2, lambda)
+    smoothlist = smooth.basis(Xt, y_new[[i]],
+                              fdParobj)
+    dfsave[ilam]  = smoothlist$df
+    gcvsave[ilam] = sum(smoothlist$gcv)
+  }
+  
+  which.min(gcvsave) # log10(lambda) = 1.75 => lambda = 10^1.75 = 56.23
+  
+  lambda   = 10^loglam[which.min(gcvsave)]
+  fdParobj = fdPar(basisBspline_Simulated_Data, 2, lambda)
+  temp.fit = smooth.basis(Xt, y_new[[i]],fdParobj)
+  df <- c(df, temp.fit$df)
+  temp.fd = temp.fit$fd
+  beta_ss[[i]] <- temp.fd$coefs
+}
+
+R2a_ss <- sapply(1:6, function(i){
+  yhat_ss <- B_all[[i]]%*%beta_ss[[i]]
+  RSS_ss <- sum((yhat_ss - y_new[[i]])^2)
+  TSS = sum((y_new[[i]] - mean(y_new[[i]]))^2) 
+  R2a_ss = 1 - (RSS_ss/(length(y_new[[i]])-df[i]))/(TSS/(length(y_new[[i]])-1))
+  R2a_ss
+})
+
 # regression splines
 R2a_rs <- sapply(1:6, function(i){
   regression_splines <- lm(y_new[[i]] ~ B_all[[i]] - 1)
   yhat_r <- fitted(regression_splines)
   RSS_r <- sum((yhat_r - y_new[[i]])^2)
-  TSS = sum((y_new[[1]] - mean(y_new[[1]]))^2) 
+  TSS = sum((y_new[[i]] - mean(y_new[[i]]))^2) 
   R2a_rs = 1 - (RSS_r/(length(y_new[[i]])-K))/(TSS/(length(y_new[[i]])-1))
   R2a_rs
 })
@@ -263,7 +306,7 @@ R2_adj_VEM <- sapply(1:6, function(i){
 
 # R2 table ----
 
-data.frame(Curve = c(1,2,3,4,5,6), VEM = round(R2_adj_VEM,4), RS = round(R2a_rs,4), BLASSO = round(R2_adj_BL,4), LASSO = round(R2_lasso,4))
+data.frame(Curve = c(1,2,3,4,5,6), VEM = round(R2_adj_VEM,4), RS = round(R2a_rs,4), SS = round(R2a_ss,4), BLASSO = round(R2_adj_BL,4), LASSO = round(R2_lasso,4))
 
 # Plot - VEM and others
 
@@ -301,7 +344,7 @@ color = c("orange", "purple", "green","blue", "red", "black")
     lines(Xt, y = (out$mu_beta[seq_values[[i]]]*ifelse(out$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B_all[[i]])*sds[[i]], lwd = 2, col=color[i] , type = "l", ylab = expression(g[t]), xlab = expression(t))
   }
   
-  legend("topright", legend = cities, col = c("orange", "purple", "green","blue", "red", "yellow"), lty = c(1, 1, 1, 1, 1, 1), bty = "n")
+  legend("topright", legend = cities, col = c("orange", "purple", "green","blue", "red", "black"), lty = c(1, 1, 1, 1, 1, 1), bty = "n")
   
   
   dev.off()
@@ -329,8 +372,9 @@ library(scales)
     # lines(Xt, CB_VEM[[i]][,1]*sds[[i]], col = "black", lty = 2)
     #  lines(Xt, CB_VEM[[i]][,2]*sds[[i]], col = "black", lty = 2)
     polygon(c(Xt, rev(Xt)), c(CB_VEM[[i]][,1]*sds[[i]], rev(CB_VEM[[i]][,2]*sds[[i]])), col = "#00000030", border = NA)
+    print(ifelse(out_all[[i]]$p[seq_values[[i]]] > 0.50, 1, 0))
   }
-  #print(ifelse(out_mcycle_K20$p[seq_values[[i]]] > 0.50, 1, 0))
+  #print(ifelse(out_all[[i]]$p[seq_values[[i]]] > 0.50, 1, 0))
   dev.off()   
 }
 
@@ -347,19 +391,21 @@ library(scales)
     
     #lines(predict(smooth.spline(Xt, y[[i]]), Xt), lwd = 2, col = "blue")
     lines(Xt, estimativa_funcional_LASSO[,i]*sds[[i]], lwd = 2, col = "blue", lty = 2)
-    lines(Xt, estimativa_BLASSO[,i]*sds[[i]], lwd = 2, col = "green")
-    lines(Xt, fitted(lm(y_new[[i]] ~ B_all[[i]] - 1))*sds[[i]], lwd = 2, col = "red", lty = 2)
+    lines(Xt, estimativa_BLASSO[,i]*sds[[i]], lwd = 2, col = "green",lty = 3)
+    lines(Xt, B_all[[i]]%*%beta_ss[[i]]*sds[[i]], lwd = 2, col = "purple", lty = 4)
+    lines(Xt, fitted(lm(y_new[[i]] ~ B_all[[i]] - 1))*sds[[i]], lwd = 2, col = "red", lty = 8)
     #lines(Xt, y[[i]],  cex = 1, pch = 16, col = col = alpha("black", 0.3), ylab = "Temperature", xlab = "day")
     #lines(Xt, CB_RS[[i]][,1], col = "red", lty = 2)
     #lines(Xt, CB_RS[[i]][,2], col = "red", lty = 2)
     #lines(Xt, CB_SS[[i]][,1], col = "blue", lty = 2)
     #lines(Xt, CB_SS[[i]][,2], col = "blue", lty = 2)
     #polygon(c(Xt, rev(Xt)), c(CB_VEM[[i]][,1]*sds[[i]], rev(CB_VEM[[i]][,2]*sds[[i]])), col = "#00000020", border = NA)
-    legend("topright", legend = c("Proposed method", "Regression splines", "LASSO", "Bayesian LASSO"), col = c("black", "red", "blue","green"), lty = c(1, 1, 1, 1), bty = "n")
+    legend("topright", legend = c("Proposed method", "Regression splines","Smoothing splines", "LASSO", "Bayesian LASSO"), col = c("black", "red", "purple", "blue","green"), lty = c(1, 1, 1, 1), bty = "n")
     print(ifelse(out$p[seq_values[[i]]] > 0.50, 1, 0))
   }
   dev.off()   
 }
+
 RS_fit <- fitted(lm(y_new[[i]] ~ B_all[[i]] - 1))
 summer_t = 150:250
 {
@@ -369,23 +415,27 @@ summer_t = 150:250
   
   for(i in 1:6){
     RS_fit <- fitted(lm(y_new[[i]] ~ B_all[[i]] - 1))
+    SS_fit <- B_all[[i]]%*%beta_ss[[i]]
     #plot(Xt[summer_t],y[[i]][summer_t],  cex = 0.5, pch = 16, col = alpha("black", 0.3), ylab = "Temperature", xlab = "day", ylim = c(10, 25), main = cities[i])
     seq_values <- lapply(c(seq(1, 6*K_all[i], K_all[i])), function(x){seq(x,x+K_all[i]-1)})
     out <- out_all[[i]]
     plot(Xt[summer_t], y = (out$mu_beta[seq_values[[i]]]*ifelse(out$p[seq_values[[i]]] > 0.50, 1, 0))%*%t(B_all[[i]][summer_t,])*sds[[i]], lwd = 2, col= "black", type = "l", ylab = "Temperature", xlab = "day", ylim=c(10, 22), main = cities[i])
     
     #lines(predict(smooth.spline(Xt, y[[i]]), Xt), lwd = 2, col = "blue")
-    lines(Xt[summer_t], estimativa_funcional_LASSO[summer_t,i]*sds[[i]], lwd = 2, col = "blue", lty = 4)
-    lines(Xt[summer_t], estimativa_BLASSO[summer_t,i]*sds[[i]], lwd = 2, col = "green")
-    lines(Xt[summer_t], RS_fit[summer_t]*sds[[i]], lwd = 2, col = "red", lty = 2)
+    lines(Xt[summer_t], estimativa_funcional_LASSO[summer_t,i]*sds[[i]], lwd = 2, col = "blue", lty = 2)
+    lines(Xt[summer_t], estimativa_BLASSO[summer_t,i]*sds[[i]], lwd = 2, col = "green", lty = 3)
+    lines(Xt[summer_t], RS_fit[summer_t]*sds[[i]], lwd = 2, col = "red", lty = 8)
+    lines(Xt[summer_t], SS_fit[summer_t]*sds[[i]], lwd = 2, col = "purple", lty = 4)
     #points(y[[i]]~Xt)
     #points(Xt[zoom_t], y[[i]][zoom_t])
-    legend("topright", legend = c("Proposed method", "Regression splines", "LASSO", "Bayesian LASSO"), col = c("black", "red", "blue","green"), lty = c(1, 1, 1, 1), bty = "n")
+    legend("topright", legend = c("Proposed method", "Regression splines",  "Smoothing splines", "LASSO", "Bayesian LASSO"), col = c("black", "red", "purple", "blue","green"), lty = c(1, 1, 1, 1), bty = "n")
     #print(ifelse(out_mcycle_K20$p[seq_values[[i]]] > 0.50, 1, 0))
   }
   
   dev.off()
 }  
 
+save(out_tempK20_year, file = "out_tempK20_year.RData")
+save(out_tempK30_year, file = "out_tempK30_year.RData")
 
 
