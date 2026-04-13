@@ -382,11 +382,12 @@ dev.off()
 
 which(ifelse(out_mcycle_K20$p > 0.50, 1, 0) == 1)
 colors = rep("blue", K)
-colors[which(ifelse(out_mcycle_K20$p > 0.50, 1, 0) == 0)] <- "grey"
+colors[which(ifelse(out_mcycle_K20$p > 0.50, 1, 0) == 0)] <- "black"
 {
   pdf(file = sprintf("%s_%d.pdf", "mcycle_basis_vem", 1), width = 12.5, height = 2.5)
   par(mfrow=c(1,1), mar = c(5, 4.1, 2, 0.1), cex = 0.8) 
-  plot(basisBspline_Simulated_Data, ylim = c(0,1), knots = FALSE, col = colors, lty = rep(c(2, 1, 2, 1, 2), c(5, 4, 1, 1, 9)))
+  plot(basisBspline_Simulated_Data, ylim = c(0,1), knots = FALSE, col = colors,
+       lty = rep(c(2, 1, 2, 1, 2), c(5, 4, 1, 1, 9)), lwd = rep(c(1.5, 2, 1.5, 2, 1.5), c(5, 4, 1, 1, 9)))
 }
 dev.off()
 
